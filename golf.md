@@ -11,7 +11,7 @@ server.py
 nc challs.scriptsorcerers.xyz 10501
 
 
-## Solution
+## Solution:
 
 **Step 1:**
 
@@ -163,9 +163,9 @@ io.sendline(b"EOF")
 print(io.recvall().decode(errors="replace"))
 ```
 
-Flag: scriptCTF{8u7_1_c@n7_s3e_7h3_c0d3}
+Flag: **scriptCTF{8u7_1_c@n7_s3e_7h3_c0d3}**
 
-## Summary
+## Summary:
 
 1. Recon and identify the constraint that it has to be a certain size
 2. Try to make compact code
