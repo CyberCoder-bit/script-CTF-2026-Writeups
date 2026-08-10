@@ -6,7 +6,7 @@ NoobMaster
 
 I am from the future! I accidentally forgot to link chall.zip! Surely you can find it and solve it right?
 
-## Solution
+## Solution:
 
 
 **Step 1:**
