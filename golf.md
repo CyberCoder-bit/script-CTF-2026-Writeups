@@ -88,7 +88,7 @@ for a in r:
 
 But when I ran it locally against server.py, it was rejected:
 ```
-(venv) jason@MainXuComputer:~/script$ python3 server.py
+$ ~/script$ python3 server.py
 Send python code (enter EOF when done):
 D=[(-1,0),(0,-1),(1,0),(0,1)]
 d=x=y=9
