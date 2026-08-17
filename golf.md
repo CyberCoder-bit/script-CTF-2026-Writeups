@@ -1,10 +1,12 @@
 # Misc/Golf? Writeup
 
-Golf?
-483
-Connor Chang
+Title: Golf?
 
-my lil bro wanted to put a spiral in his picture frame but it only has 250px
+483
+
+Author: Connor Chang
+
+Description: my lil bro wanted to put a spiral in his picture frame but it only has 250px
 
 Attachments
 server.py
@@ -15,7 +17,7 @@ nc challs.scriptsorcerers.xyz 10501
 
 **Step 1:**
 
-First, we can look at server.py and see that this is a [code golf challenge](https://code.golf/) meaning we will have to use as little characters as possible to print:
+First, we can inspect server.py. At first glance, this seems like a [code golf challenge](https://code.golf/), meaning we will have to use as few characters as possible to print:
 ```python
 goal =  [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
         [35, 36, 37, 38, 39, 40, 41, 42, 43, 10],
@@ -28,6 +30,9 @@ goal =  [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
         [28, 57, 56, 55, 54, 53, 52, 51, 50, 17],
         [27, 26, 25, 24, 23, 22, 21, 20, 19, 18]]
 ```
+
+Essentially, we want to submit code that prints this while staying under the size limit in order to get the flag.
+
 **Step 2:**
 
 So first I tried to make a very compact algorithm to solve this challenge. I looked at [Stack Overflow](https://stackoverflow.com/questions/46671637/two-dimensional-array-in-python) and got the code:
@@ -55,7 +60,7 @@ def createSpiralMatrix(n):
     return res
 ```
 This code basically rotates the direction in a clockwise fashion if we have already filled the grid we are going to or if it becomes out of bounds.
-Then I tried to compact the code and change the range from 1-n^2 to 0-99. I also made all the variables one letter and removed all spaces. I also split curPos to seperate x and y variables and nexPos to X, Y.
+Then I tried to compact the code and change the range from 1-n^2 to 0-99. I also made all the variables one letter and removed all spaces. I also split curPos to separate x and y variables and nextPos to X, Y.
 
 Variable Mappings
 D: dirs
@@ -66,37 +71,37 @@ r: res
 
 ```
 D=[(-1,0),(0,-1),(1,0),(0,1)]
-d=x=y=0
-r=[[0]*10 for _ in range(10)]
+d=x=y=9
+r=[[-1]*10 for _ in range(10)]
 for i in range(100):
-    r[x][u]=i
+    r[x][y]=i
     X,Y=x+D[d][0],y+D[d][1]
-    if !(0<=X<10 && 0<=Y<10) || a[Y][X]:
+    if not(0<=X<10 and 0<=Y<10)or r[X][Y]>=0:
         d=(d+1)%4
         X,Y=x+D[d][0],y+D[d][1]
     x,y=X,Y
-for r in a:
-    print(*r)
+for a in r:
+    print(*a)
 ```
 
 **Step 3:**
 
-But, when I ran it locally against server.py it failed:
+But when I ran it locally against server.py, it was rejected:
 ```
-(venv) jason@MainXuComputer:~/UIU$ python3 server.py
+(venv) jason@MainXuComputer:~/script$ python3 server.py
 Send python code (enter EOF when done):
 D=[(-1,0),(0,-1),(1,0),(0,1)]
-d=x=y=0
-r=[[0]*10 for _ in range(10)]
+d=x=y=9
+r=[[-1]*10 for _ in range(10)]
 for i in range(100):
-    r[x][u]=i
+    r[x][y]=i
     X,Y=x+D[d][0],y+D[d][1]
-    if !(0<=X<10 && 0<=Y<10) || a[Y][X]:
+    if not(0<=X<10 and 0<=Y<10)or r[X][Y]>=0:
         d=(d+1)%4
         X,Y=x+D[d][0],y+D[d][1]
     x,y=X,Y
-for r in a:
-    print(*r)
+for a in r:
+    print(*a)
 EOF
 TOO LONG
 ```
@@ -108,23 +113,24 @@ if font.getlength(code) > 380:
     return "TOO LONG"
 ```
 
-After rerunning the code I get: ```1055.90625```
+After rerunning the code, I get: ```1055.90625```
 
 The required value is 380 or less, which is pretty far off, meaning I will have to shorten my code by around 3 times.
 
 **Step 4:** 
 
 At this point, I was ready to give up. But there was one feature that I noticed was different compared to standard code-golf challenges. Usually, we count the number of characters.
-But here, we count the length of the text in ```font.getlength(code) > 380``` using Pillow. In addition, in challenge description it says ```250px```, possibly hinting that the vulnerability was here.
+But here, we count the length of the text in ```font.getlength(code) > 380``` using Pillow. In addition, in the challenge description it says ```250px```, possibly hinting that the vulnerability was here.
 
-After this, I did some research and found some [Pillow Documentation](https://pillow.readthedocs.io/en/stable/reference/ImageFont.html#PIL.ImageFont.ImageFont.getlength) which said font.getlength() got the length the text was supposed to be offset by. After doing a bit more research and looking at an [artile](https://freetype.org/freetype2/docs/glyphs/glyphs-3.html), I realized that unicode combining characters could be used to make the length really small since they had a vertical layout.
-An example would be accents or marks, which is normally ontop of a character and therefore counts as almost no horizontal width when rendered. This can still work as python because python treats them as seperate characters.
+After this, I did some research and found some [Pillow Documentation](https://pillow.readthedocs.io/en/stable/reference/ImageFont.html#PIL.ImageFont.ImageFont.getlength) which said ```font.getlength()``` got the length the text was supposed to be offset by, or the advance width. After doing a bit more research and looking at an [article](https://freetype.org/freetype2/docs/glyphs/glyphs-3.html), I realized that Unicode combining characters could be used to make the length really small since they are usually rendered on top of or around a preceding character and have zero or near-zero advance width.
+An example would be accents or marks, which are normally on top of a character and therefore count as almost no advance width when rendered. This can still work in Python because Python treats them as separate characters. By using this technique, we can make a long Python string occupy very little space.
 
 **Step 5:**
 
-After this, I researched common mark ranges and found that ```U+0300–U+036F``` was a standard range for these accents/marks. Therfore, we can add 300 in hex or 768 in decimal to the unicode value of each character.
+After this, I researched common mark ranges and found that ```U+0300–U+036F``` was a standard range for these accents/marks. Therefore, we can add 0x300 or 768 in decimal to the Unicode value of each character. Since the text we are encoding is only digits, spaces, and newlines, then adding 0x300 will land in the Combining Marks Range.
 
-We can do it for everything in "goal matrix" and decode/print it with ```;print(''.join(chr(ord(c)-768)for c in s))```. I wrote a script which just encode the matrix into unicode values + 768 and decodes it when running.
+Instead of writing an actual script, we just encode the exact 10x10 textual representation and decode/print it with ```;print(''.join(chr(ord(c)-768)for c in s))```. I wrote a script that just encodes the matrix into Unicode values + 768 and decodes it when running. 
+Normally, hardcoding 100 values would be much larger than writing an algorithm, but since most of the numbers/spaces can be represented with zero or near-zero advance width, hardcoding becomes much cheaper. The final payload becomes: ```s='<encoded combining characters>';print(''.join(chr(ord(c)-768)for c in s))```.
 
 Final script:
 ```
@@ -170,5 +176,5 @@ Flag: **scriptCTF{8u7_1_c@n7_s3e_7h3_c0d3}**
 1. Recon and identify the constraint that it has to be a certain size
 2. Try to make compact code
 3. Understand it is infeasible to achieve the required length
-4. Research how length is measured and how unicode combining characters can bypass
-5. Run final script and get flag
+4. Research how length is measured and how Unicode combining characters bypass the length cap
+5. Run the final script and get the flag
