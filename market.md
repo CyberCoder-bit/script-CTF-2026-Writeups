@@ -11,14 +11,14 @@ market.zip
 
 **Step 1:**
 
-First I unzipped the chall folder and looked through server/src/main.rs and then found the win condtion:
+First, I unzipped the chall folder and looked through server/src/main.rs and then found the win condition:
 ```
     if current_owner == user.pubkey() {
         let flag = fs::read_to_string("flag.txt").unwrap();
         writeln!(socket, "Did you just steal the market from ME?? I SHALL BE BACK!: {}", flag)?; // NoobMaster is MAD?!
 
     }
-````
+```
 Next, I looked through the program/src files and found an interesting weakness in processor.rs:
 
 ```
@@ -39,9 +39,9 @@ Next, I looked through the program/src files and found an interesting weakness i
     }
 ```
 
-I found that user_config_pda, system_config_pda, and treasury_pda were all validated but holding_pda was created but not validated. 
+I found that user_config_pda, system_config_pda, and treasury_pda were all validated, but holding_pda was created but not validated and compared to the holding account. Therefore, ```buy()``` will deserialize and modify any compatible account supplied as the ```holding``` parameter. 
 
-In buy, the account we pass is deserialized as a Holding account and its owner, item, and quantity fields are changed. Because the program never verifies that holding has the expected holding PDA, we can pass another account instead.
+In buy, the account we pass is deserialized as a Holding account, and its owner, item, and quantity fields are changed. Because the program never verifies that holding has the expected holding PDA, we can pass another account instead.
 
 ```
 let holding_data = &mut Holding::deserialize(&mut &(*holding.data).borrow_mut()[..])?;
@@ -50,11 +50,8 @@ holding_data.item = *item.key;
 holding_data.quantity += 1;
 holding_data.serialize(&mut &mut (*holding.data).borrow_mut()[..]).unwrap();
 ```
-Since they have the same seralized layout and there is no validation, if we pass Config as ```holding``` then it will be:
-```
-CONFIG.owner = user
-```
-This achieves our win condition by overwriting the CONFIG owner and gets us the flag.
+
+This can help us achieve our win condition by overwriting the CONFIG owner and getting us the flag.
 
 **Step 2:**
 
@@ -69,22 +66,6 @@ pub struct Config {
 
 #[repr(C)]
 #[derive(BorshSerialize, BorshDeserialize)]
-pub struct User {
-    id: u32,
-    authority: Pubkey,
-}
-
-#[repr(C)]
-#[derive(BorshSerialize, BorshDeserialize)]
-pub struct Item {
-    name: String,
-    index: u64,
-    cost: u64,
-    stock: u64,
-}
-
-#[repr(C)]
-#[derive(BorshSerialize, BorshDeserialize)]
 pub struct Holding {
     owner: Pubkey,
     item: Pubkey,
@@ -93,9 +74,22 @@ pub struct Holding {
 ```    
 This means that we can modify the values for CONFIG since it never checks the holding pda as described in step 1.
 
+```
+Config.owner           ↔ Holding.owner
+Config.treasury        ↔ Holding.item
+Config.shop_item_count ↔ Holding.quantity
+```
+
+Since ```Config``` and ```Holding``` both have the same serialized layout, if we pass Config as ```holding``` then it will effectively become:
+```
+CONFIG.owner = user
+CONFIG.treasury = item
+CONFIG.shop_item_count += 1
+```
+
 **Step 3:**
 
-We need an item to buy. Looking again at processer.rs:
+We need an item to buy. Looking again at processor.rs:
 ```
     let item0_data = Item {
         name: "Rubber Ducky".to_string(),
@@ -118,7 +112,7 @@ We need an item to buy. Looking again at processer.rs:
     Ok(())
 ```
 
-While it might seem logical to buy shell, rubber duck is cheaper. Since the item_id is 1337, and ```1337!=0``` then it still enters the else branch intended for shell. That branch never checks that item.key is valid and just derives the shell pda. Thus, we can just use the Rubber Duck.
+While it might seem logical to buy the shell, the rubber duck is cheaper. Since ```buy()``` takes an ```item_id``` argument separate from the supplied ```item``` account, we can just pass ```item_id=1337```. Because ```1337``` is nonzero, the program will execute the ```else``` branch intended for shell, which never validates the supplied ```item``` account or ```item_bump```. Thus, we can use the Rubber Duck.
 ```
     if (item_id == 0) {
         let (item0_pda, item0_expected_bump) = Pubkey::find_program_address(&[b"RUBBERDUCK"], program);
@@ -131,11 +125,13 @@ While it might seem logical to buy shell, rubber duck is cheaper. Since the item
     }
 ```
 
-Therfore, we can pass:
+Therefore, we can pass:
 ```
 item_id = 1337
 item = RUBBERDUCK
 ```
+
+We also need to deposit 2.1 SOL, since the Rubber Duck costs 2 SOL and the extra 0.1 is for fees/rent.
 
 **Step 4:**
 Next, we look inside the solve folder and find an example already set up. 
@@ -143,10 +139,11 @@ Next, we look inside the solve folder and find an example already set up.
 Using this example, I created a Rust solver.
 
 I wrote a solve.py that does the following:
-1. Send Solver Program pubkey and length
-2. Get Market Program ID and User Account
-3. Derives CONFIG and RUBBERDUCK using same code as the program
-4. Derives Vault and User PDA using:
+1. Builds solve.so and connects to the challenge
+2. Sends Solver Program pubkey and length
+3. Gets Market Program ID and User Account
+4. Derives CONFIG and RUBBERDUCK using the same code as the program
+5. Derive Vault and User PDA using:
 ```
 treasury, treasury_bump = Pubkey.find_program_address(
     [b"VAULT"],
@@ -157,13 +154,12 @@ user_config, user_bump = Pubkey.find_program_address(
     program,
 )
 ```
-5. Build Accounts and Send Each Account
-6. solve.so (Compiled version of lib.rs) exploits the market
-7. Read Flag
+5. Build Accounts and Send the Required Account
+6. ```solve.so``` (Compiled version of lib.rs) runs and exploits the market
+7. Read the flag
 
 Full Solve.py
 ```python
-jason@MainXuComputer:/mnt/c/Users/linaw/Downloads/market/solve$ cat solve.py
 #!/usr/bin/env python3
 
 from pwn import *
@@ -272,14 +268,15 @@ if payload:
 r.interactive()
 ```
 
-Next I created lib.rs in solve/src/lib.rs to do the following:
-1. Recieve accounts from solve.py
-2. Derive User PDA, Config PDA, Rubber Ducky bump, treasury bump
-3. Create Market User
-4. Depsoit 2.1 Sol
-5. Construct ```buy()``` for Rubber Ducky by passing config in the holding parameter instead of the actual holding account
+Next, I created lib.rs in solve/src/lib.rs to do the following:
+1. Receive accounts from ```solve.py```
+2. Derive the required PDA bumps
+3. Create and initialize Market User
+4. Deposit 2.1 SOL
+5. Construct ```buy()``` for Rubber Ducky by passing ```CONFIG``` in the ```holding``` parameter
 6. Execute buy and config is overwritten
 
+> Note: The key trick is that the same ```CONFIG``` account is passed 2 times: once as the legitimate config account and again where buy() expects the ```Holding``` account.
 ```
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
@@ -414,7 +411,7 @@ crate-type = ["cdylib", "lib"]
 
 
 **Step 5:** 
-To set up the solve script do:
+To set up the solve script, do:
 ```
 source ~/venv/bin/activate
 python3 solve.py
@@ -447,8 +444,9 @@ $
 Flag: **scriptCTF{w41t_4_s3c0nd_wh0_4r3_y0u???_f201f346fe24}**
 
 ## Summary
-1. Notice win condition was ```current_owner == user.pubkey()```; ```buy()``` creates holding PDA but did not check holding account pub to make sure it is valid.
-2. Notice config and holding account have same serialized format and that config can be passed as holding
-3. Notice that we can buy rubber duck (with ```item_id=1337```) and that it stills enters the nonzero item branch which fails to validate the expected Shell PDA
-4. Create rust solver and compile
-5. Run it, overwrite ```CONFIG.owner``` using buy() vulnerbaility, and obtain the flag
+1. Notice win condition was ```current_owner == user.pubkey()```.
+2. Notice ```buy()``` creates a holding PDA but did not check the holding account pub.
+3. Notice ```CONFIG``` and ```HOLDING``` account have the same serialized format and that ```CONFIG``` can be passed as the ```holding``` parameter.
+4. Notice that we can buy a rubber duck and choose ```item_id=1337```; it still enters the nonzero item branch, which fails to validate the expected Shell PDA.
+5. Create a Rust solver and compile.
+6. Run it, overwrite ```CONFIG.owner``` using buy() vulnerability, and obtain the flag: **scriptCTF{w41t_4_s3c0nd_wh0_4r3_y0u???_f201f346fe24}**.
