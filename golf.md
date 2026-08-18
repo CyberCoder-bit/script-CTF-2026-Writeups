@@ -2,7 +2,7 @@
 
 Title: Golf?
 
-483
+Points: 483
 
 Author: Connor Chang
 
