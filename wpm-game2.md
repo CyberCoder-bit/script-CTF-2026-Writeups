@@ -1,6 +1,10 @@
 # Web/wpm-game2
 
-wpm-game2 497 NoobMaster
+Title: wpm-game2 
+
+Points: 497 
+
+Author: NoobMaster
 
 No more development platform :(
 
