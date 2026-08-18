@@ -9,8 +9,8 @@ Author: Connor Chang
 Description: my lil bro wanted to put a spiral in his picture frame but it only has 250px
 
 Attachments
+
 server.py
-nc challs.scriptsorcerers.xyz 10501
 
 ## Unintended Explanation
 
