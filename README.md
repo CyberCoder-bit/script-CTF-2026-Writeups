@@ -18,3 +18,8 @@ Writeups:
 | [web/wpm-game2](wpm-game2.md) |
 
 **Best Unintended**
+| Challenge |
+|---|
+| [misc/Golf?](golf-unintended.md) |
+| [blockchain/Market](market-unintended.md) |
+| [web/wpm-game2](wpm-game2-unintended.md) |
