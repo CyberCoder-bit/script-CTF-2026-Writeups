@@ -9,10 +9,12 @@ Writeups for scriptCTF 2026.
 
 Writeups:
 
-**crypto**
+**Best Technical/Well Written**
 | Challenge |
 |---|
 | [misc/Golf?](golf.md) |
 | [blockchain/Market](market.md) |
 | [crypto/Oops](oops.md) |
 | [web/wpm-game2](wpm-game2.md) |
+
+**Best Unintended**
