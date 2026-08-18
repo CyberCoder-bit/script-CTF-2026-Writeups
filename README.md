@@ -27,4 +27,4 @@ Writeups:
 **Best Write-up using IDA free version**
 | Challenge |
 |---|
-| [rev/Diabolical](diabolical=ida.md) |
+| [rev/Diabolical](diabolical-ida.md) |
