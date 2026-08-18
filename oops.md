@@ -1,8 +1,10 @@
 # Crypto/oops Writeup
 
-Oops
-443
-NoobMaster
+Title: Oops
+
+Points: 443
+
+Author: NoobMaster
 
 I am from the future! I accidentally forgot to link chall.zip! Surely you can find it and solve it right?
 
