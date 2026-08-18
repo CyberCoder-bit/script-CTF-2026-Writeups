@@ -70,8 +70,8 @@ X,Y: nextPos
 r: res
 
 ```
-D=[(-1,0),(0,-1),(1,0),(0,1)]
-d=x=y=9
+D=[(0,1),(1,0),(0,-1),(-1,0)]
+d=x=y=0
 r=[[-1]*10 for _ in range(10)]
 for i in range(100):
     r[x][y]=i
@@ -90,8 +90,8 @@ But when I ran it locally against server.py, it was rejected:
 ```
 $ ~/script$ python3 server.py
 Send python code (enter EOF when done):
-D=[(-1,0),(0,-1),(1,0),(0,1)]
-d=x=y=9
+D=[(0,1),(1,0),(0,-1),(-1,0)]
+d=x=y=0
 r=[[-1]*10 for _ in range(10)]
 for i in range(100):
     r[x][y]=i
